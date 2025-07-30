@@ -1,10 +1,7 @@
-﻿namespace TokenLesson1.Models.UserToken;
+﻿namespace TokenLesson1.Dtos.Users;
 
-public class UserToken
+public class TokenDto
 {
-    //public string Token { get; set; } = default!;
-
-    //public DateTime ExpirationDate { get; set; }
     public string AccessToken { get; set; } = default!;
     public DateTime AccessTokenExpiration { get; set; }
 

@@ -3,42 +3,51 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using System.Text;
+using TokenLesson1.Common;
 using TokenLesson1.DataContext;
 using TokenLesson1.Exceptions;
 using TokenLesson1.Repositories.Users;
 using TokenLesson1.Services.Accaunts;
+using TokenLesson1.Services.Jwt;
 using TokenLesson1.Services.Users;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["AuthConfiguration:Issuer"],
-        ValidAudience = builder.Configuration["AuthConfiguration:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["AuthConfiguration:Key"]))
-    };
-});
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.Key))
+        };
+    });
+
+
+builder.Services.AddScoped<IAccauntService, AccauntService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IAccauntService, AccauntService>();
+builder.Services.Configure<JwtService>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddDbContext<AplicationDbContext>();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>

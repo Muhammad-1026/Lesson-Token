@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TokenLesson1.Dtos.Users;
 using TokenLesson1.Models.User;
-using TokenLesson1.Models.UserToken;
 
 namespace TokenLesson1.DataContext;
 
@@ -17,7 +17,6 @@ public class AplicationDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
-    public DbSet<UserToken> UserTokens { get; set; } = default!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -31,6 +30,6 @@ public class AplicationDbContext : DbContext
 
         modelBuilder.Entity<User>()
             .Property(u => u.Role)
-            .HasConversion<string>(); 
+            .HasConversion<string>();
     }
 }

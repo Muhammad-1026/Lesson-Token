@@ -1,6 +1,6 @@
-﻿namespace TokenLesson1.Models.UserCredential;
+﻿namespace TokenLesson1.Dtos.Users;
 
-public class UserCredential
+public class LoginDto
 {
     public required string UserName { get; set; }
 

@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TokenLesson1.Models.UserCredential;
-using TokenLesson1.Models.UserToken;
+using TokenLesson1.Dtos.Users;
 using TokenLesson1.Services.Accaunts;
 
 namespace TokenLesson1.Controllers;
 
 [ApiController]
-
 public class AccauntsController : ControllerBase
 {
     private readonly IAccauntService _accauntService;
@@ -17,9 +15,9 @@ public class AccauntsController : ControllerBase
     }
 
     [HttpPost("api/login")]
-    public async ValueTask<ActionResult<UserToken>> LoginAsync([FromBody] UserCredential userCredential)
+    public async ValueTask<ActionResult<TokenDto>> LoginAsync([FromBody] LoginDto loginDto)
     {
-        UserToken userToken = await _accauntService.LoginAsncy(userCredential);
+        TokenDto userToken = await _accauntService.LoginAsync(loginDto);
 
         return Ok(userToken);
     }
