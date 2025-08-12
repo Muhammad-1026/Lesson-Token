@@ -12,6 +12,7 @@ public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly IAuthService _authService;
+    private readonly 
 
     public UserController(IUserService userService, IAuthService authService)
     {
@@ -51,5 +52,11 @@ public class UserController : ControllerBase
     public async Task<ActionResult<bool>> DeleteUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return Ok(await _userService.DeleteUserByIdAsync(id, cancellationToken));
+    }
+
+    [HttpPost("refresh-token")]
+    public async Task<ActionResult<TokenDto>> RefreshTokenAsync([FromBody] RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken = default)
+    {
+        return await _authService.RefreshTokenAsync(tokenDto, cancellationToken);
     }
 }
