@@ -7,7 +7,7 @@ public class Entity
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -32,5 +32,14 @@ namespace TokenLesson2.Repositories
 
             return refreshToken;
         }
+
+        public async Task UpdateRefreshTokenAsync(RefreshToken storedToken)
+        {
+            if (storedToken is null)
+                throw new ArgumentNullException(nameof(storedToken), "Stored token cannot be null");
+
+            _context.RefreshTokens.Update(storedToken);
+            await _context.SaveChangesAsync();
+        }
     }
 }

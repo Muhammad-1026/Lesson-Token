@@ -50,7 +50,6 @@ public class UserController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult<bool>> DeleteUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
-        return Ok(true);
+        return Ok(await _userService.DeleteUserByIdAsync(id, cancellationToken));
     }
 }

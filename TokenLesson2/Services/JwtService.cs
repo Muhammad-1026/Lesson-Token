@@ -17,15 +17,82 @@ namespace TokenLesson2.Services
     {
         private readonly IConfiguration _configuration;
         private readonly IAuthRepository _authRepository;
+        private readonly IUserRepository _userRepository;
         private readonly JwtSettings _jwtSettings;
         private readonly IJwtRepository _jwtRepository;
 
-        public JwtService(IConfiguration configuration, IAuthRepository authRepository, IOptions<JwtSettings> jwtSettings, IJwtRepository jwtRepository)
+        public JwtService(IConfiguration configuration, 
+            IAuthRepository authRepository, 
+            IUserRepository userRepository, 
+            IOptions<JwtSettings> jwtSettings, 
+            IJwtRepository jwtRepository)
         {
             _configuration = configuration;
             _authRepository = authRepository;
             _jwtSettings = jwtSettings.Value;
+            _userRepository = userRepository;
             _jwtRepository = jwtRepository;
+        }
+        public async Task<TokenDto> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+        {
+            var storedToken = await _jwtRepository.GetByTokenAsync(refreshToken, cancellationToken);
+
+            if (storedToken == null || storedToken.IsUsed || storedToken.IsRevoked)
+                throw new SecurityTokenException("Invalid refresh token");
+
+            if (storedToken.Expires < DateTime.UtcNow)
+                throw new SecurityTokenException("Refresh token expired");
+
+            var user = await _userRepository.GetByIdAsync(storedToken.UserId, cancellationToken);
+
+            if (user == null)
+                throw new SecurityTokenException("User not found");
+
+            // Помечаем старый refresh токен как использованный
+            storedToken.IsUsed = true;
+            await _jwtRepository.UpdateRefreshTokenAsync(storedToken);
+
+            // Генерируем новый access и refresh токен
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim("id", user.Id.ToString()),
+                new Claim("firstName", user.FirstName),
+                new Claim("userName", user.UserName),
+                new Claim("role", user.Role.ToString())
+            };
+
+            var accessTokenExpiration = DateTime.UtcNow.AddMinutes(30);
+            var refreshTokenExpiration = DateTime.UtcNow.AddDays(10);
+
+            var token = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: accessTokenExpiration,
+                signingCredentials: creds
+            );
+
+            var newRefreshToken = new RefreshToken
+            {
+                Token = GenerateRefreshToken(),
+                Expires = refreshTokenExpiration,
+                UserId = user.Id,
+                IsUsed = false,
+                IsRevoked = false,
+            };
+
+            await _jwtRepository.AddRefreshTokenAsync(newRefreshToken, cancellationToken);
+
+            return new TokenDto
+            {
+                AccessToken = new JwtSecurityTokenHandler().WriteToken(token),
+                AccessTokenExpiration = accessTokenExpiration,
+                RefreshToken = newRefreshToken.Token,
+                RefreshTokenExpiration = refreshTokenExpiration
+            };
         }
 
         public async Task<TokenDto> GenerateTokenAsync(User user, CancellationToken cancellationToken = default)
@@ -61,7 +128,7 @@ namespace TokenLesson2.Services
                 IsRevoked = false,
             };
 
-            await _jwtRepository.AddRefreshTokenAsync(refreshToken);
+            await _jwtRepository.AddRefreshTokenAsync(refreshToken, cancellationToken);
 
             return new TokenDto
             {
