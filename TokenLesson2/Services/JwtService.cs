@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using TokenLesson2.Common;
+using TokenLesson2.Dtos.Request;
 using TokenLesson2.Dtos.Response;
 using TokenLesson2.Interface.Repository;
 using TokenLesson2.Interface.Services;
@@ -25,9 +26,9 @@ public class JwtService : IJwtService
         _jwtRepository = jwtRepository;
     }
 
-    public async Task<TokenDto> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+    public async Task<TokenDto> RefreshTokenAsync(RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken = default)
     {
-        var storedToken = await _jwtRepository.GetByTokenAsync(refreshToken, cancellationToken);
+        var storedToken = await _jwtRepository.GetByTokenAsync(refreshTokenDto.RefreshToken, cancellationToken);
 
         if (storedToken == null || storedToken.IsUsed || storedToken.IsRevoked)
             throw new SecurityTokenException("Invalid refresh token");
@@ -50,10 +51,10 @@ public class JwtService : IJwtService
 
         var claims = new[]
         {
-            new Claim("id", user.Id.ToString()),
-            new Claim("firstName", user.FirstName),
-            new Claim("userName", user.UserName),
-            new Claim("role", user.Role.ToString())
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.FirstName),
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var accessTokenExpiration = DateTime.UtcNow.AddMinutes(30);
@@ -94,14 +95,14 @@ public class JwtService : IJwtService
 
         var claims = new[]
         {
-            new Claim("id", user.Id.ToString()),
-            new Claim("firstName", user.FirstName),
-            new Claim("userName", user.UserName),
-            new Claim("role", user.Role.ToString())
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.FirstName),
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
-        var accessTokenExpiration = DateTime.UtcNow.AddMinutes(30);
-        var refreshTokenExpiration = DateTime.UtcNow.AddDays(10);
+        var accessTokenExpiration = DateTime.UtcNow.AddMinutes(60);
+        var refreshTokenExpiration = DateTime.UtcNow.AddDays(30);
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
